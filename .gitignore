@@ -37,3 +37,10 @@ vignettes/*.pdf
 
 # R Environment Variables
 .Renviron
+
+# Apple Specific 
+.DS_Store
+
+#.csv limited the upload of raw data to GitHub
+.csv
+.zip
