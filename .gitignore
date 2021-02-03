@@ -39,8 +39,8 @@ vignettes/*.pdf
 .Renviron
 
 # Apple Specific 
-.DS_Store
+*.DS_Store
 
 #.csv limited the upload of raw data to GitHub
-.csv
-.zip
+*.csv
+*.zip
