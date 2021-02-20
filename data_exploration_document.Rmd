@@ -1,0 +1,169 @@
+---
+title: "Data Exploration Project"
+author: "Glen Lewis"
+date: "2/18/2021"
+output:
+  html_document: default
+  word_document: default
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+
+library(tidyverse)
+library(jtools)
+library(vtable)
+library(purrr)
+library(lubridate)
+
+# base data build ---- 
+base_institute_data <- read_csv('01_raw_data/Most+Recent+Cohorts+(Scorecard+Elements).csv') 
+
+# function build ----
+trend_prep <- function(df) {
+  'schname' = select(df, schname, monthorweek, index)
+  return(tibble(schname))
+}
+
+
+class_conversion <- function(df, x, y){
+  'str_prefix' = x
+  'new_class' = y
+  df %>% mutate(across(starts_with(str_prefix), new_class))
+}
+
+# build and cleans the trend data ----
+trend_filenames <- list.files('01_raw_data', 'trend', full.name = TRUE)
+
+wip_trend <- trend_filenames %>% 
+  map(read_csv) %>% 
+  map(trend_prep) %>% 
+  bind_rows() %>% 
+  na.omit()
+
+wip_trend<- wip_trend %>% mutate(week_start = as.Date(str_sub(monthorweek,1,10))) %>% 
+  mutate(year = year(week_start), month = month(week_start)) %>% 
+  select(-'monthorweek')
+
+index_sd <- wip_trend %>% pull(index) %>% na.omit %>% sd()
+index_mean <- wip_trend %>% pull(index) %>% na.omit %>% mean()
+
+wip_trend <- wip_trend %>% mutate(inst_std_index = (index - index_mean)/index_sd) %>% 
+group_by(year) %>% 
+mutate(yearly_av_index = mean(index), yearly_sd_index = sd(index)) %>% group_by(schname, year, month) %>% mutate(monthly_av_index = mean(index), monthly_inst_std_index = (mean(index) - yearly_av_index) / yearly_sd_index)
+
+wip_trend <- wip_trend[c(1,3,4,5,2,6,9,10,7,8)]
+
+write_csv(wip_trend, path = '02_derived_data/wip_trend.csv')
+
+# build and cleans the institute data ----
+wip_institute_data <- base_institute_data
+
+names(wip_institute_data)[121] <- 'md_earn_wne_p10'
+
+# following coverts character columns to appropriate class
+wip_institute_data$gt_25k_p6 <- as.numeric(wip_institute_data$gt_25k_p6) #float
+
+wip_institute_data <- wip_institute_data %>% class_conversion("NPT", as.numeric) %>% 
+  class_conversion("PCIP", as.numeric) %>% 
+  #integer or float 
+  class_conversion("md_", as.numeric) #integer or float 
+
+wip_institute_data <- wip_institute_data %>% class_conversion(c('HBCU', 'PBI', 'ANNHI',
+     'TRIBAL', 'AANAPII', 'HSI', 'NANTI', 'MENONLY', 'WOMENONLY'), as.factor)
+
+earning_sd <- wip_institute_data %>% pull(md_earn_wne_p10) %>% na.omit() %>% sd()
+mean_earning <- wip_institute_data %>% pull(md_earn_wne_p10) %>% na.omit() %>% mean()
+
+wip_institute_data<- wip_institute_data %>% 
+  mutate(sd_earnings = (md_earn_wne_p10 - mean_earning) / earning_sd)
+# following code jinks the data into a single dataframe ----
+base_name_id <- read_csv('01_raw_data/id_name_link.csv')
+
+wip_id_index <- base_name_id %>% left_join(wip_trend, 'schname') %>% 
+  rename(OPEID = opeid) %>% select(-'unitid', -'schname')
+
+wip_institute_data <- wip_institute_data %>% full_join(wip_id_index, 'OPEID')
+
+# following code builds specific dataframes for analysis ----
+
+pre_2015_hi <- wip_institute_data %>% filter(year < 2015, sd_earnings > .786) 
+pre_2015_low <- wip_institute_data %>% filter(year < 2015, sd_earnings < - 0.159)
+
+post_2015_hi <- wip_institute_data %>% filter(year > 2014, sd_earnings > .786)
+post_2015_low <- wip_institute_data %>% filter(year > 2014, sd_earnings < - 0.159)
+
+```
+In 2015 the College Score Card began to be published.  This score card include the once hard to find metric: post graduation earnings.  The following examines if schools who graduates earn more received more interest from perspective students following publication of the first College Score Card. 
+
+# Defining High and Low 'Earning' Institutions
+
+First challenge is defining what defines low and high earning institutions. 
+Initial visualization and descriptive statistics shows the interquartile range of reported graduate earnings being  -.159 to .786. The density plot of standardized earnings does show a right tail which is supported by the number and magnitudes of outliers seen in the boxplot. For the purposes of this analysis high earning institutions will be defined as those reporting earnings above the 75th percentile (.786) and conversely those institute reporting below the 25th percentile (-.159) will be defined as low earning institutes.
+
+```{r}
+ggplot(wip_institute_data, aes(x = sd_earnings)) + 
+  geom_boxplot() + 
+  xlab('Standardized Earnings') 
+ggplot(wip_institute_data, aes(x = sd_earnings)) + 
+  geom_density(fill = 'blue', alpha = .5) + 
+  xlab('Standardized Earnings')
+```
+
+## Did Graduate Reported Earnings Influence Index Scores Prior to 2015?
+
+# Conclusion 
+
+
+## Analysis
+
+
+```{r}
+ggplot(pre_2015_hi, aes(x = sd_earnings, y = monthly_inst_std_index)) + 
+  geom_point() +
+  xlab('Standardized Earnings') +
+  ylab('Monthly Standardized Index Score') +
+  ggtitle('High Earning Institiutes Monthly Std Index, Prior to 2015')
+
+ggplot(pre_2015_low, aes(x = sd_earnings, y = monthly_inst_std_index)) + 
+  geom_point() +
+  xlab('Standardized Earnings') +
+  ylab('Monthly Standardized Index Score') +
+  ggtitle('Low Earning Institiutes Monthly Std Index, Prior to 2015') 
+```
+
+
+
+````{r}
+pre_2015_hi_lm <- lm(inst_std_index ~ sd_earnings + month, data = pre_2015_hi)
+pre_2015_low_lm <- lm(inst_std_index ~ sd_earnings + month, data = pre_2015_low)
+export_summs(pre_2015_hi_lm, pre_2015_low_lm)
+````
+
+
+````{r}
+effect_plot(pre_2015_low_lm, sd_earnings, plot.points = FALSE)
+````
+ 
+# Index Scores After to 2015
+
+````{r}
+ggplot(post_2015_hi, aes(x = sd_earnings, y = monthly_inst_std_index)) + 
+  geom_point() +
+  xlab('Standardized Earnings') +
+  ylab('Monthly Standardized Index Score') +
+  ggtitle('High Earning Institiutes Monthly Std Index, Prior to 2015')
+ggplot(post_2015_low, aes(x = sd_earnings, y = monthly_inst_std_index)) + 
+  geom_point() +
+  xlab('Standardized Earnings') +
+  ylab('Monthly Standardized Index Score') +
+  ggtitle('Low Earning Institiutes Monthly Std Index, Prior to 2015') 
+
+post_2015_hi_lm <- lm(inst_std_index ~ sd_earnings + HBCU + HSI + month, data = post_2015_hi)
+post_2015_low_lm <- lm(inst_std_index ~ sd_earnings + HBCU + HSI + month, data = post_2015_low)
+export_summs(post_2015_hi_lm, post_2015_low_lm)
+````
+
+
+
