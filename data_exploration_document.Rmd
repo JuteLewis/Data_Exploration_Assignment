@@ -156,7 +156,7 @@ Two different models where examined:
 2.	a “polynomial” model of the same variables. The polynomial was intended to address the outliers.
 3.	a “month” control variable since interest in schools is seasonal, i.e., interest increases and wanes in the spring and summer as students begin the application process for their first fall classes.
 
-The “straight” regression model (st_pre_2015_hi_lm) supported the notion that earnings had only a small little to no relationship with index scores prior to 2015 showing that an increase one 1 standard deviation increased index score by .01. The effects plot shows a coeffect nicely includes index scores below 7.5 standard deviation but “downplays” the effect of schools above 7.5. 
+The “straight” regression model (st_pre_2015_hi_lm) supported the notion that earnings had only an influence on index scores prior to 2015 with a one 1 standard deviation increase in earnings causing an .01 increase in index score. The effects plot shows the coefficient nicely includes index scores 2.5 standard deviation but “downplays” the effect of schools above 7.5 standard deviations.
 
 The “polynomial” regression model (poly_pre_2015_hi_lm) supported the observation that for an increase in standardized earnings there is a .18 increase in index score until approximately 3 standard deviations (B~1~/(2B~2~), ~$75500) when the index score decreases by .03 for a 1 standard deviation increase in earnings. This makes sense as some these higher earning schools could be specialty schools that apply to a small segment of the overall prospective student population. 
 
@@ -171,7 +171,7 @@ effect_plot(poly_pre_2015_hi_lm, sd_earnings, plot.points = TRUE, x.label = 'Sta
  
 # Index Scores After to 2015
 
-The visualizations after 2015, appears to show an interesting change on the potential relationship between higher earnings schools and their index score. In the “High Earning Institute Std Index Post 2015” there is a noticeable shift toward negative standardized index scores for all schools between .789 and 2.5 std deviations (~$44300 - ~$68500). Additionally, the variation in index score for schools above 5 std in earnings (~$104000) indicating a more consistent interest year-round.  Their index score; however, remained mostly +/- 1 std of the average score. Thus, there is no notability difference in the high earning scores from the average which one would expect if earnings played a significant role in index scores. 
+The visualizations after 2015, appears to show an interesting change on the potential relationship between higher earnings schools and their index score. In the “High Earning Institute Std Index Post 2015” there is a noticeable shift toward negative standardized index scores for all schools between .789 and 2.5 std deviations (~$44300 - ~$68500). Additionally, the variation in index score for schools above 5 std in earnings (~$104000) indicating a more consistent interest year-round.  Their index score; however, remained mostly +/- 1 std of the average score. Thus, there is no significant difference in the high earning scores from the average which one would expect if earnings played a significant role in index scores. 
 
 ````{r}
 ggplot(post_2015_hi, aes(x = sd_earnings, y = monthly_av_stdzed_index_score)) + 
@@ -190,13 +190,13 @@ post_2015_low_lm <- lm(monthly_av_stdzed_index_score ~ sd_earnings + month, data
 export_summs(poly_post_2015_hi_lm, post_2015_low_lm, model.names = c('poly_post_2015_hi_lm', 'post_2015_low_lm'))
 effect_plot(poly_post_2015_hi_lm, sd_earnings, plot.points = TRUE, x.label = 'Standardized Earnings', y.label =  'Monthly Standardized Index Scores', point.color = 'blue2', main.title = "Polynomial post 2015 Model")
 ````
-Only one model, the pre_2015_hi_lm model was used to model the behavior of index scores for low earning schools.  That is due to the poor fit for a polynomial.  The model also shows a strong, statically significant relationship between increases in reported earnings and index score for those schools considered ad low earners. The model pre_2015_low_lm shows that for .1 increase (~$1400) in standardized earnings, there is a .18 increase in interest.
+Only one model, the pre_2015_hi_lm model was used to model the behavior of index scores for low earning schools.  That is due to the poor fit for a polynomial. The model also shows a strong, statically significant relationship between increases in reported earnings and index score for those schools considered as low earners. The model pre_2015_low_lm shows that for .1 increase (~$1400) in standardized earnings, there is a .18 increase in interest.
 
-The visualizations after 2015, appears to show an interesting change on the potential relationship between higher earnings schools and their index score. In the “High Earning Institute Std Index Post 2015” there is a noticeable shift toward negative standardized index scores for all schools, and especially noticeable for schools between .789 and 2.5 std deviations (~$44300 - ~$68500). While high earning schools saw a negative shift in their index score; remained mostly +/- 1 std of the average score. Thus, there is no notability difference in the high earning scores from the average index which one would expect if earnings played a significant role in index scores.
+The visualizations after 2015, appears to show an interesting change on the potential relationship between higher earnings schools and their index score. In the “High Earning Institute Std Index Post 2015” there is a noticeable shift toward negative standardized index scores for all schools, and especially noticeable for schools between .789 and 2.5 std deviations (~$44300 - ~$68500). While high earning schools saw a negative shift in their index score; remained mostly +/- 1 std of the average score. Thus, there is no notable difference in the high earning scores from the average index which one would expect if earnings played a significant role in index scores.
 
 The polynomial model supports this. Both models’ intercepts are lower than the pre 2015 models while there is no change in the post 2015 B1, B2 coefficients in the polynomial model.
 
-The post 2015 low earning school model had a significant change with the change in index score verse increases in standardized earnings being only .08 verses the pre 2015 of .18.
+The post 2015 low earning school model had a significant change in index score verse increases in standardized earnings, being only .08 verses the pre 2015 coefficient of .18.
 
 ````{r}
 poly_post_2015_hi_lm <- lm(monthly_av_stdzed_index_score ~ sd_earnings + I(sd_earnings^2) +  month, data = post_2015_hi)
@@ -209,4 +209,4 @@ effect_plot(poly_post_2015_hi_lm, sd_earnings, plot.points = TRUE, x.label = 'St
 
 The data above indicates that publication of the College Score Card and its report on graduate earnings did not have an influence on the college index scores. 
 
-There was a noticeable negative shift in index scores indicating a reduced interest in the report's schools following 2015.  That shift could be the result of other effects outside of the score card, such as the increase entollment in vocational schools teaching skills that were once required four year degrees.  
+There was a noticeable negative shift in index scores indicating a reduced overall interest in the reported  schools following 2015.  That shift could be the result of other effects outside of the publication of the College Score Card such as the increased enrollment in vocational schools that teach skills that once required four year degrees.  
